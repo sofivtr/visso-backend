@@ -25,6 +25,9 @@ public class Usuario {
     @Column(name = "apellido", nullable = false, length = 100)
     private String apellido;
 
+    @Column(name = "rut", nullable = false, length = 12, unique = true) // Agregamos esto
+    private String rut;
+
     @Column(name = "email", nullable = false, unique = true, length = 150)
     private String email;
 
