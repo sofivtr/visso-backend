@@ -1,6 +1,7 @@
 package cl.duoc.visso.controller;
 
 import cl.duoc.visso.model.Usuario;
+import cl.duoc.visso.config.JWTProveedor;
 import cl.duoc.visso.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +14,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final JWTProveedor jwtTokenProvider;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JWTProveedor jwtTokenProvider) {
         this.authService = authService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @PostMapping("/registro")
@@ -32,10 +35,21 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> credenciales) {
         try {
             Usuario usuario = authService.login(
-                    credenciales.get("email"), 
+                    credenciales.get("email"),
                     credenciales.get("password")
             );
-            return ResponseEntity.ok(usuario);
+            String token = jwtTokenProvider.generateToken(
+                    usuario.getEmail(),
+                    Map.of(
+                        "id", usuario.getId(),
+                        "rol", usuario.getRol(),
+                        "nombre", usuario.getNombre()
+                    )
+            );
+            return ResponseEntity.ok(Map.of(
+                    "token", token,
+                    "usuario", usuario
+            ));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
