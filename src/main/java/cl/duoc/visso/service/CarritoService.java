@@ -52,6 +52,11 @@ public class CarritoService {
         Producto producto = productoRepository.findById(productoId)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
 
+        // Validar stock disponible
+        if (producto.getStock() < cantidad) {
+            throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock());
+        }
+
         Optional<DetalleCarrito> existente;
 
         // LÓGICA: ¿Es óptico (con cotización) o normal?
@@ -63,7 +68,14 @@ public class CarritoService {
             
             if (existente.isPresent()) {
                 DetalleCarrito det = existente.get();
-                det.setCantidad(det.getCantidad() + cantidad);
+                int nuevaCantidad = det.getCantidad() + cantidad;
+                
+                // Validar stock para la nueva cantidad total
+                if (producto.getStock() < nuevaCantidad) {
+                    throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock() + ", ya tienes: " + det.getCantidad());
+                }
+                
+                det.setCantidad(nuevaCantidad);
                 detalleRepository.save(det);
             } else {
                 crearDetalle(carrito, producto, cantidad, cotizacion);
@@ -73,7 +85,14 @@ public class CarritoService {
 
             if (existente.isPresent()) {
                 DetalleCarrito det = existente.get();
-                det.setCantidad(det.getCantidad() + cantidad);
+                int nuevaCantidad = det.getCantidad() + cantidad;
+                
+                // Validar stock para la nueva cantidad total
+                if (producto.getStock() < nuevaCantidad) {
+                    throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock() + ", ya tienes: " + det.getCantidad());
+                }
+                
+                det.setCantidad(nuevaCantidad);
                 detalleRepository.save(det);
             } else {
                 crearDetalle(carrito, producto, cantidad, null);
@@ -111,8 +130,27 @@ public class CarritoService {
     }
 
     // Cierra el carrito para simular la compra finalizada
+    @Transactional
     public Carrito cerrarCarrito(Long usuarioId) {
         Carrito carrito = obtenerCarritoActivo(usuarioId);
+        List<DetalleCarrito> detalles = detalleRepository.findByCarrito(carrito);
+        
+        // Validar stock antes de cerrar
+        for (DetalleCarrito detalle : detalles) {
+            Producto producto = detalle.getProducto();
+            if (producto.getStock() < detalle.getCantidad()) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() + 
+                    ". Disponible: " + producto.getStock() + ", solicitado: " + detalle.getCantidad());
+            }
+        }
+        
+        // Descontar stock de cada producto
+        for (DetalleCarrito detalle : detalles) {
+            Producto producto = detalle.getProducto();
+            producto.setStock(producto.getStock() - detalle.getCantidad());
+            productoRepository.save(producto);
+        }
+        
         carrito.setEstado("C"); // C = Cerrado/Comprado
         return carritoRepository.save(carrito);
     }
@@ -128,6 +166,24 @@ public class CarritoService {
     // Listar todas las ventas (Carritos Cerrados)
     public List<Carrito> listarVentas() {
         return carritoRepository.findByEstado("C");
+    }
+    
+    // Actualizar cantidad en el carrito
+    @Transactional
+    public void actualizarCantidad(Long detalleId, Integer nuevaCantidad) {
+        DetalleCarrito detalle = detalleRepository.findById(detalleId)
+            .orElseThrow(() -> new RuntimeException("Detalle no encontrado"));
+        
+        Producto producto = detalle.getProducto();
+        
+        // Validar stock disponible
+        if (producto.getStock() < nuevaCantidad) {
+            throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock());
+        }
+        
+        detalle.setCantidad(nuevaCantidad);
+        detalleRepository.save(detalle);
+        recalcularTotal(detalle.getCarrito());
     }
     
 }

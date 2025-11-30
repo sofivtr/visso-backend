@@ -3,6 +3,8 @@ package cl.duoc.visso.controller;
 import cl.duoc.visso.model.Marca;
 import cl.duoc.visso.service.MarcaService;
 import cl.duoc.visso.service.FileStorageService;
+
+import java.util.Optional;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -76,13 +78,25 @@ public class MarcaController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        marcaService.obtenerMarcaPorId(id).ifPresent(marca -> {
-            if (marca.getImagen() != null) {
-                fileStorageService.deleteFile(marca.getImagen());
-            }
-            marcaService.eliminarMarca(id);
-        });
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        Optional<Marca> marcaOpt = marcaService.obtenerMarcaPorId(id);
+        
+        if (marcaOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Verificar si tiene productos asociados
+        if (marcaService.tieneProductosAsociados(id)) {
+            return ResponseEntity.badRequest()
+                    .body("No se puede eliminar la marca porque tiene productos asociados");
+        }
+        
+        Marca marca = marcaOpt.get();
+        if (marca.getImagen() != null) {
+            fileStorageService.deleteFile(marca.getImagen());
+        }
+        marcaService.eliminarMarca(id);
+        
         return ResponseEntity.noContent().build();
     }
 }

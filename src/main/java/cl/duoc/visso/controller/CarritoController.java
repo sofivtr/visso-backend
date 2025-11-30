@@ -74,11 +74,10 @@ public class CarritoController {
             if (cantidad == null || cantidad < 1) {
                 return ResponseEntity.badRequest().body("Cantidad inválida");
             }
-            detalleCarritoRepository.findById(detalleId).ifPresent(detalle -> {
-                detalle.setCantidad(cantidad);
-                detalleCarritoRepository.save(detalle);
-            });
+            carritoService.actualizarCantidad(detalleId, cantidad);
             return ResponseEntity.ok("Cantidad actualizada");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al actualizar: " + e.getMessage());
         }
