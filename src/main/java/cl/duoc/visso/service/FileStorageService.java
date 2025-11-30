@@ -38,6 +38,12 @@ public class FileStorageService {
             }
             
             this.uploadLocation = currentPath.resolve("target/classes/static/images");
+            
+            // Sincronizar imágenes de src a target al iniciar
+            Path srcImagesPath = currentPath.resolve("src/main/resources/static/images");
+            if (Files.exists(srcImagesPath)) {
+                syncImagesFromSrc(srcImagesPath, this.uploadLocation);
+            }
         } else {
             // Producción: usar directorio externo configurado
             this.uploadLocation = Paths.get(uploadDir).toAbsolutePath();
@@ -48,6 +54,33 @@ public class FileStorageService {
             System.out.println("📁 Directorio de uploads: " + this.uploadLocation);
         } catch (IOException e) {
             throw new FileStorageException("No se pudo crear el directorio de uploads", e);
+        }
+    }
+    
+    /**
+     * Sincroniza las imágenes de src a target (solo las que no existen en target)
+     */
+    private void syncImagesFromSrc(Path srcPath, Path targetPath) {
+        try {
+            Files.walk(srcPath)
+                .filter(Files::isRegularFile)
+                .forEach(srcFile -> {
+                    try {
+                        Path relativePath = srcPath.relativize(srcFile);
+                        Path targetFile = targetPath.resolve(relativePath);
+                        
+                        // Solo copiar si no existe en target
+                        if (!Files.exists(targetFile)) {
+                            Files.createDirectories(targetFile.getParent());
+                            Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+                            System.out.println("🔄 Sincronizado: " + relativePath);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("⚠️ Error al sincronizar " + srcFile + ": " + e.getMessage());
+                    }
+                });
+        } catch (IOException e) {
+            System.err.println("⚠️ Error al sincronizar imágenes: " + e.getMessage());
         }
     }
 
