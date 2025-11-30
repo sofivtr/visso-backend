@@ -1,7 +1,7 @@
 -- ============================
 -- CATEGORIAS (Sin tildes)
 -- ============================
-INSERT INTO categoria (id_categoria, nombre) VALUES
+INSERT IGNORE INTO categoria (id_categoria, nombre) VALUES
 (1, 'Opticos'),
 (2, 'Lentes de sol'),
 (3, 'Lentes de contacto'),
@@ -10,7 +10,7 @@ INSERT INTO categoria (id_categoria, nombre) VALUES
 -- ============================
 -- MARCAS
 -- ============================
-INSERT INTO marca (id_marca, nombre, imagen) VALUES
+INSERT IGNORE INTO marca (id_marca, nombre, imagen) VALUES
 (1, 'Ray-Ban', '/images/MARCAS/ray-ban-logo_2024_1.png'),
 (2, 'Dolce & Gabbana', '/images/MARCAS/dolce.png'),
 (3, 'Giorgio Armani', '/images/MARCAS/giorgio.png'),
@@ -25,7 +25,7 @@ INSERT INTO marca (id_marca, nombre, imagen) VALUES
 -- ============================
 -- PRODUCTOS
 -- ============================
-INSERT INTO producto (
+INSERT IGNORE INTO producto (
     id_producto,
     codigo_producto,
     nombre,
@@ -127,11 +127,11 @@ INSERT INTO producto (
 -- Nota: La contrasena para todos es '123456'
 -- ============================
 
-INSERT INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
+INSERT IGNORE INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
 ('Administrador', 'Visso', '11.111.111-1', 'admin@visso.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'admin', '2024-11-20', 1);
 
-INSERT INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
+INSERT IGNORE INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
 ('Sofi', 'Munoz', '21.970.360-0', 'sofi@duocuc.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'usuario', '2024-11-20', 1);
 
-INSERT INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
+INSERT IGNORE INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
 ('Vendedor', 'Visso', '22.222.222-2', 'vendedor@visso.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'vendedor', '2024-11-20', 1);
