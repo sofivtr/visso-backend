@@ -23,6 +23,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> {})
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Endpoints públicos
@@ -31,6 +32,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/categorias/**").permitAll()
                 .requestMatchers("/api/marcas/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Endpoints protegidos
                 .requestMatchers("/api/usuarios/**").authenticated()
                 .requestMatchers("/api/carrito/**").authenticated()
