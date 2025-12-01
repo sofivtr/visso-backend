@@ -12,11 +12,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/productos")
 @CrossOrigin(origins = "*")
+@Tag(name = "Productos")
 public class ProductoController {
 
     private final ProductoService productoService;
@@ -35,12 +39,14 @@ public class ProductoController {
     }
 
     @GetMapping
+    @Operation(summary = "Listar productos")
     public ResponseEntity<List<Producto>> listarProductos() {
         return ResponseEntity.ok(productoService.listarProductos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable Long id) {
+    @Operation(summary = "Obtener producto por ID")
+    public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable @Parameter(description = "ID del producto") Long id) {
         return productoService.obtenerProductoPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -48,6 +54,7 @@ public class ProductoController {
 
     // CRUD: Crear con imagen
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Crear producto")
     public ResponseEntity<Producto> crearProducto(
             @RequestParam("codigoProducto") String codigoProducto,
             @RequestParam("nombre") String nombre,
@@ -84,8 +91,9 @@ public class ProductoController {
 
     // CRUD: Actualizar con imagen
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Actualizar producto")
     public ResponseEntity<Producto> actualizarProducto(
-            @PathVariable Long id,
+            @PathVariable @Parameter(description = "ID del producto") Long id,
             @RequestParam("codigoProducto") String codigoProducto,
             @RequestParam("nombre") String nombre,
             @RequestParam("descripcion") String descripcion,
@@ -127,7 +135,8 @@ public class ProductoController {
 
     // CRUD: Eliminar con imagen
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
+    @Operation(summary = "Eliminar producto")
+    public ResponseEntity<Void> eliminarProducto(@PathVariable @Parameter(description = "ID del producto") Long id) {
         productoService.obtenerProductoPorId(id).ifPresent(p -> {
             if (p.getImagenUrl() != null) {
                 fileStorageService.deleteFile(p.getImagenUrl());
