@@ -7,10 +7,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 @RequestMapping("/api/cotizaciones")
 @CrossOrigin(origins = "*")
+@Tag(name = "Cotizaciones")
 public class CotizacionController {
 
     private final CotizacionRepository cotizacionRepository;
@@ -21,13 +26,15 @@ public class CotizacionController {
 
     // Crear cotización
     @PostMapping
+    @Operation(summary = "Crear cotización", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Cotizacion> crear(@RequestBody Cotizacion cotizacion) {
         return ResponseEntity.status(HttpStatus.CREATED).body(cotizacionRepository.save(cotizacion));
     }
 
     // Historial por usuario
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<Cotizacion>> listarPorUsuario(@PathVariable Long usuarioId) {
+    @Operation(summary = "Listar cotizaciones por usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<List<Cotizacion>> listarPorUsuario(@PathVariable @Parameter(description = "ID del usuario") Long usuarioId) {
         Usuario u = new Usuario();
         u.setId(usuarioId);
         return ResponseEntity.ok(cotizacionRepository.findByUsuario(u));
