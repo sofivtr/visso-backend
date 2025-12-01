@@ -128,10 +128,10 @@ INSERT IGNORE INTO producto (
 -- ============================
 
 INSERT IGNORE INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
-('Administrador', 'Visso', '11.111.111-1', 'admin@visso.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'admin', '2024-11-20', 1);
+('Administrador', 'Visso', '22.002.404-0', 'admin@visso.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'admin', '2024-11-20', 1);
 
 INSERT IGNORE INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
 ('Sofi', 'Munoz', '21.970.360-0', 'sofi@duocuc.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'usuario', '2024-11-20', 1);
 
 INSERT IGNORE INTO usuario (nombre, apellido, rut, email, password_hash, rol, fecha_registro, activo) VALUES 
-('Vendedor', 'Visso', '22.222.222-2', 'vendedor@visso.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'vendedor', '2024-11-20', 1);
+('Vendedor', 'Visso', '15.485.101-1', 'vendedor@visso.cl', '$2a$10$y3RdScRbLPiYqtCRtXCDzedIhizQ7qvXGRLO75xcIHDskqK9Gry1K', 'vendedor', '2024-11-20', 1);
