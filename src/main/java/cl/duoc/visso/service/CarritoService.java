@@ -1,0 +1,217 @@
+package cl.duoc.visso.service;
+
+import cl.duoc.visso.model.*;
+import cl.duoc.visso.repository.*;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class CarritoService {
+
+    private final CarritoRepository carritoRepository;
+    private final DetalleCarritoRepository detalleRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final ProductoRepository productoRepository;
+    private final CotizacionRepository cotizacionRepository;
+    private final DatosTransaccionRepository datosTransaccionRepository;
+
+    public CarritoService(CarritoRepository carritoRepository, 
+                          DetalleCarritoRepository detalleRepository, 
+                          UsuarioRepository usuarioRepository, 
+                          ProductoRepository productoRepository,
+                          CotizacionRepository cotizacionRepository,
+                          DatosTransaccionRepository datosTransaccionRepository) {
+        this.carritoRepository = carritoRepository;
+        this.detalleRepository = detalleRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.productoRepository = productoRepository;
+        this.cotizacionRepository = cotizacionRepository;
+        this.datosTransaccionRepository = datosTransaccionRepository;
+    }
+
+    public Carrito obtenerCarritoActivo(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        return carritoRepository.findByUsuarioAndEstado(usuario, "A")
+                .orElseGet(() -> {
+                    Carrito nuevo = new Carrito();
+                    nuevo.setUsuario(usuario);
+                    nuevo.setFechaCreacion(LocalDateTime.now());
+                    nuevo.setEstado("A"); // A = Activo
+                    nuevo.setTotal(BigDecimal.ZERO);
+                    return carritoRepository.save(nuevo);
+                });
+    }
+
+    @Transactional
+    public void agregarProducto(Long usuarioId, Long productoId, Integer cantidad, Long cotizacionId) {
+        Carrito carrito = obtenerCarritoActivo(usuarioId);
+        Producto producto = productoRepository.findById(productoId)
+            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+
+        // Validar stock disponible
+        if (producto.getStock() < cantidad) {
+            throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock());
+        }
+
+        Optional<DetalleCarrito> existente;
+
+        // LÓGICA: ¿Es óptico (con cotización) o normal?
+        if (cotizacionId != null) {
+            Cotizacion cotizacion = cotizacionRepository.findById(cotizacionId)
+                    .orElseThrow(() -> new RuntimeException("Cotización no encontrada"));
+            
+            existente = detalleRepository.findByCarritoAndProductoAndCotizacion(carrito, producto, cotizacion);
+            
+            if (existente.isPresent()) {
+                DetalleCarrito det = existente.get();
+                int nuevaCantidad = det.getCantidad() + cantidad;
+                
+                // Validar stock para la nueva cantidad total
+                if (producto.getStock() < nuevaCantidad) {
+                    throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock() + ", ya tienes: " + det.getCantidad());
+                }
+                
+                det.setCantidad(nuevaCantidad);
+                detalleRepository.save(det);
+            } else {
+                crearDetalle(carrito, producto, cantidad, cotizacion);
+            }
+        } else {
+            existente = detalleRepository.findByCarritoAndProductoAndCotizacionIsNull(carrito, producto);
+
+            if (existente.isPresent()) {
+                DetalleCarrito det = existente.get();
+                int nuevaCantidad = det.getCantidad() + cantidad;
+                
+                // Validar stock para la nueva cantidad total
+                if (producto.getStock() < nuevaCantidad) {
+                    throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock() + ", ya tienes: " + det.getCantidad());
+                }
+                
+                det.setCantidad(nuevaCantidad);
+                detalleRepository.save(det);
+            } else {
+                crearDetalle(carrito, producto, cantidad, null);
+            }
+        }
+        recalcularTotal(carrito);
+    }
+
+    private void crearDetalle(Carrito carrito, Producto producto, Integer cantidad, Cotizacion cotizacion) {
+        DetalleCarrito detalle = new DetalleCarrito();
+        detalle.setCarrito(carrito);
+        detalle.setProducto(producto);
+        detalle.setNombreProducto(producto.getNombre()); // Copiar nombre para histórico
+        detalle.setCantidad(cantidad);
+        
+        // Si tiene cotización, usar el precio calculado (valorAprox), sino usar precio base del producto
+        if (cotizacion != null && cotizacion.getValorAprox() != null) {
+            detalle.setPrecioUnitario(cotizacion.getValorAprox());
+        } else {
+            detalle.setPrecioUnitario(producto.getPrecio());
+        }
+        
+        detalle.setCotizacion(cotizacion);
+        detalleRepository.save(detalle);
+    }
+
+    private void recalcularTotal(Carrito carrito) {
+        List<DetalleCarrito> detalles = detalleRepository.findByCarrito(carrito);
+        BigDecimal total = BigDecimal.ZERO;
+        for (DetalleCarrito d : detalles) {
+            total = total.add(d.getPrecioUnitario().multiply(BigDecimal.valueOf(d.getCantidad())));
+        }
+        carrito.setTotal(total);
+        carritoRepository.save(carrito);
+    }
+
+    // Cierra el carrito para simular la compra finalizada
+    @Transactional
+    public Carrito cerrarCarrito(Long usuarioId, DatosTransaccion datosTransaccion) {
+        Carrito carrito = obtenerCarritoActivo(usuarioId);
+        List<DetalleCarrito> detalles = detalleRepository.findByCarrito(carrito);
+        
+        // Validar stock antes de cerrar
+        for (DetalleCarrito detalle : detalles) {
+            Producto producto = detalle.getProducto();
+            if (producto.getStock() < detalle.getCantidad()) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre() + 
+                    ". Disponible: " + producto.getStock() + ", solicitado: " + detalle.getCantidad());
+            }
+        }
+        
+        // Guardar datos de transacción (envío y pago)
+        if (datosTransaccion != null) {
+            DatosTransaccion datosGuardados = datosTransaccionRepository.save(datosTransaccion);
+            carrito.setDatosTransaccion(datosGuardados);
+        }
+        
+        // Descontar stock de cada producto (MOMENTO CRÍTICO DE DESCUENTO)
+        for (DetalleCarrito detalle : detalles) {
+            Producto producto = detalle.getProducto();
+            producto.setStock(producto.getStock() - detalle.getCantidad());
+            productoRepository.save(producto);
+        }
+        
+        carrito.setEstado("P"); // P = Pagado/Comprado
+        return carritoRepository.save(carrito);
+    }
+
+    // Limpiar carrito (eliminar todos los detalles)
+    public void limpiarCarrito(Long usuarioId) {
+        Carrito carrito = obtenerCarritoActivo(usuarioId);
+        List<DetalleCarrito> detalles = detalleRepository.findByCarrito(carrito);
+        detalleRepository.deleteAll(detalles);
+        recalcularTotal(carrito);
+    }
+
+    // Listar todas las ventas (Carritos Pagados y Enviados)
+    public List<Carrito> listarVentas() {
+        return carritoRepository.findByEstadoIn(Arrays.asList("P", "E"));
+    }
+    
+    // Actualizar cantidad en el carrito
+    @Transactional
+    public void actualizarCantidad(Long detalleId, Integer nuevaCantidad) {
+        DetalleCarrito detalle = detalleRepository.findById(detalleId)
+            .orElseThrow(() -> new RuntimeException("Detalle no encontrado"));
+        
+        Producto producto = detalle.getProducto();
+        
+        // Validar stock disponible
+        if (producto.getStock() < nuevaCantidad) {
+            throw new RuntimeException("Stock insuficiente. Disponible: " + producto.getStock());
+        }
+        
+        detalle.setCantidad(nuevaCantidad);
+        detalleRepository.save(detalle);
+        recalcularTotal(detalle.getCarrito());
+    }
+    
+    /**
+     * Marca un carrito como enviado (Estado: P -> E)
+     * Solo es un cambio de estado administrativo, NO afecta el stock
+     */
+    @Transactional
+    public Carrito marcarComoEnviado(Long carritoId) {
+        Carrito carrito = carritoRepository.findById(carritoId)
+            .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+        
+        if (!"P".equals(carrito.getEstado())) {
+            throw new RuntimeException("Solo se pueden marcar como enviados los carritos pagados");
+        }
+        
+        carrito.setEstado("E"); // E = Enviado
+        return carritoRepository.save(carrito);
+    }
+    
+}
