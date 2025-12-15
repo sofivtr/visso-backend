@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/carrito")
@@ -33,12 +35,21 @@ public class CarritoController {
 
     @GetMapping("/{usuarioId}")
     @Operation(summary = "Obtener carrito activo del usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Carrito obtenido"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<Carrito> obtenerCarrito(@PathVariable @Parameter(description = "ID del usuario") Long usuarioId) {
         return ResponseEntity.ok(carritoService.obtenerCarritoActivo(usuarioId));
     }
 
     @PostMapping("/agregar")
     @Operation(summary = "Agregar producto al carrito", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Producto agregado"),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<MensajeResponse> agregarProducto(@RequestBody SolicitudCarrito solicitud) {
         carritoService.agregarProducto(
             solicitud.getUsuarioId(), 
@@ -51,6 +62,11 @@ public class CarritoController {
 
     @PostMapping("/cerrar/{usuarioId}")
     @Operation(summary = "Cerrar carrito y confirmar compra con datos de envío y pago (Estado: A -> P)", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Compra confirmada"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<MensajeResponse> cerrarCarrito(
             @PathVariable @Parameter(description = "ID del usuario") Long usuarioId,
             @RequestBody @Parameter(description = "Datos de envío y pago") DatosTransaccion datosTransaccion) {
@@ -60,12 +76,20 @@ public class CarritoController {
 
     @GetMapping("/cerrados")
     @Operation(summary = "Listar carritos pagados y enviados", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Listado obtenido"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<List<Carrito>> obtenerCarritosCerrados() {
         return ResponseEntity.ok(carritoService.listarVentas());
     }
 
     @GetMapping("/ventas")
     @Operation(summary = "Listar ventas (Estados: P y E)", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Listado obtenido"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<List<Carrito>> obtenerVentas() {
         // Aquí podrías validar que el usuario sea ADMIN si usaras tokens,
         // pero por ahora está bien así.
@@ -74,6 +98,11 @@ public class CarritoController {
 
     @DeleteMapping("/detalle/{detalleId}")
     @Operation(summary = "Eliminar detalle del carrito", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Detalle eliminado"),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<MensajeResponse> eliminarDetalle(@PathVariable @Parameter(description = "ID del detalle") Long detalleId) {
         try {
             detalleCarritoRepository.deleteById(detalleId);
@@ -85,6 +114,11 @@ public class CarritoController {
 
     @PutMapping("/detalle/{detalleId}")
     @Operation(summary = "Actualizar cantidad de detalle", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Cantidad actualizada"),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<MensajeResponse> actualizarCantidad(@PathVariable @Parameter(description = "ID del detalle") Long detalleId, @RequestBody ActualizarCantidadRequest body) {
         try {
             Integer cantidad = body.getCantidad();
@@ -102,6 +136,10 @@ public class CarritoController {
 
     @DeleteMapping("/{usuarioId}/limpiar")
     @Operation(summary = "Limpiar carrito", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Carrito vaciado"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<MensajeResponse> limpiarCarrito(@PathVariable @Parameter(description = "ID del usuario") Long usuarioId) {
         try {
             carritoService.limpiarCarrito(usuarioId);
@@ -113,6 +151,11 @@ public class CarritoController {
 
     @PutMapping("/marcar-enviado/{carritoId}")
     @Operation(summary = "Marcar carrito como enviado (Estado: P -> E)", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Carrito marcado como enviado"),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<MensajeResponse> marcarComoEnviado(@PathVariable @Parameter(description = "ID del carrito") Long carritoId) {
         try {
             carritoService.marcarComoEnviado(carritoId);

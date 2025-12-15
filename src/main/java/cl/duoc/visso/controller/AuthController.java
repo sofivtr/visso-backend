@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,6 +32,10 @@ public class AuthController {
 
     @PostMapping("/registro")
     @Operation(summary = "Registrar usuario")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Usuario creado"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
     public ResponseEntity<?> registrar(@RequestBody Usuario usuario) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -41,6 +47,10 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Iniciar sesión")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Login exitoso"),
+        @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
+    })
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest credenciales) {
         try {
             Usuario usuario = authService.login(
@@ -63,6 +73,11 @@ public class AuthController {
 
     @PostMapping("/recuperar-password")
         @Operation(summary = "Recuperar contraseña")
+        @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Contraseña restablecida"),
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+            @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+        })
         public ResponseEntity<MensajeResponse> recuperarPassword(@RequestBody RecuperarPasswordRequest body) {
             String email = body.getEmail();
             

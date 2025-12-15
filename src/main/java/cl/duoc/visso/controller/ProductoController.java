@@ -15,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
 
 @RestController
@@ -40,12 +42,19 @@ public class ProductoController {
 
     @GetMapping
     @Operation(summary = "Listar productos")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Listado de productos")
+    })
     public ResponseEntity<List<Producto>> listarProductos() {
         return ResponseEntity.ok(productoService.listarProductos());
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener producto por ID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Producto encontrado"),
+        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+    })
     public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable @Parameter(description = "ID del producto") Long id) {
         return productoService.obtenerProductoPorId(id)
                 .map(ResponseEntity::ok)
@@ -55,6 +64,11 @@ public class ProductoController {
     // CRUD: Crear con imagen
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Crear producto")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Producto creado"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "404", description = "Categoría o Marca no encontrada")
+    })
     public ResponseEntity<Producto> crearProducto(
             @RequestParam("codigoProducto") String codigoProducto,
             @RequestParam("nombre") String nombre,
@@ -92,6 +106,11 @@ public class ProductoController {
     // CRUD: Actualizar con imagen
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Actualizar producto")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Producto actualizado"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "404", description = "Producto/Categoría/Marca no encontrada")
+    })
     public ResponseEntity<Producto> actualizarProducto(
             @PathVariable @Parameter(description = "ID del producto") Long id,
             @RequestParam("codigoProducto") String codigoProducto,
@@ -136,6 +155,11 @@ public class ProductoController {
     // CRUD: Eliminar con imagen
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar producto")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Producto eliminado"),
+        @ApiResponse(responseCode = "400", description = "No se puede eliminar (asociaciones)"),
+        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+    })
     public ResponseEntity<?> eliminarProducto(@PathVariable @Parameter(description = "ID del producto") Long id) {
         // Verificar si el producto existe
         if (productoService.obtenerProductoPorId(id).isEmpty()) {

@@ -12,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import java.util.List;
 
@@ -31,12 +33,19 @@ public class MarcaController {
 
     @GetMapping
     @Operation(summary = "Listar marcas")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Listado de marcas")
+    })
     public ResponseEntity<List<Marca>> listar() {
         return ResponseEntity.ok(marcaService.listarMarcas());
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener marca por ID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Marca encontrada"),
+        @ApiResponse(responseCode = "404", description = "Marca no encontrada")
+    })
     public ResponseEntity<Marca> obtenerPorId(@PathVariable @Parameter(description = "ID de la marca") Long id) {
         return marcaService.obtenerMarcaPorId(id)
                 .map(ResponseEntity::ok)
@@ -45,6 +54,10 @@ public class MarcaController {
     
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Crear marca")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Marca creada"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
     public ResponseEntity<Marca> crear(
             @RequestParam("nombre") String nombre,
             @RequestPart(value = "imagen", required = false) MultipartFile imagen) {
@@ -62,6 +75,10 @@ public class MarcaController {
     
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Actualizar marca")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Marca actualizada"),
+        @ApiResponse(responseCode = "404", description = "Marca no encontrada")
+    })
     public ResponseEntity<Marca> actualizar(
             @PathVariable @Parameter(description = "ID de la marca") Long id,
             @RequestParam("nombre") String nombre,
@@ -87,6 +104,11 @@ public class MarcaController {
     
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar marca")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Marca eliminada"),
+        @ApiResponse(responseCode = "400", description = "No se puede eliminar (asociaciones)"),
+        @ApiResponse(responseCode = "404", description = "Marca no encontrada")
+    })
     public ResponseEntity<?> eliminar(@PathVariable @Parameter(description = "ID de la marca") Long id) {
         Optional<Marca> marcaOpt = marcaService.obtenerMarcaPorId(id);
         

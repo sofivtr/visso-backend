@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,6 +32,10 @@ public class MensajeController {
      */
     @PostMapping
     @Operation(summary = "Enviar mensaje de contacto (Público)", description = "Cualquier usuario puede enviar un mensaje de contacto")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Mensaje enviado"),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida")
+    })
     public ResponseEntity<MensajeResponse> crearMensaje(@RequestBody Mensaje mensaje) {
         try {
             mensajeService.guardarMensaje(mensaje);
@@ -45,6 +51,10 @@ public class MensajeController {
      */
     @GetMapping
     @Operation(summary = "Listar todos los mensajes (Solo ADMIN)", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Listado de mensajes"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<List<Mensaje>> listarMensajes() {
         return ResponseEntity.ok(mensajeService.listarTodos());
     }
@@ -54,6 +64,10 @@ public class MensajeController {
      */
     @GetMapping("/estado/{estado}")
     @Operation(summary = "Listar mensajes por estado (Solo ADMIN)", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Listado filtrado"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<List<Mensaje>> listarPorEstado(
             @PathVariable @Parameter(description = "Estado del mensaje: PENDIENTE o RESPONDIDO") String estado) {
         return ResponseEntity.ok(mensajeService.listarPorEstado(estado));
@@ -64,6 +78,12 @@ public class MensajeController {
      */
     @PutMapping("/{id}/estado")
     @Operation(summary = "Cambiar estado de mensaje (Solo ADMIN)", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Estado actualizado"),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida"),
+        @ApiResponse(responseCode = "404", description = "Mensaje no encontrado"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<MensajeResponse> cambiarEstado(
             @PathVariable @Parameter(description = "ID del mensaje") Long id,
             @RequestBody Map<String, String> request) {
@@ -86,6 +106,11 @@ public class MensajeController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener mensaje por ID (Solo ADMIN)", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Mensaje encontrado"),
+        @ApiResponse(responseCode = "404", description = "Mensaje no encontrado"),
+        @ApiResponse(responseCode = "401", description = "No autorizado")
+    })
     public ResponseEntity<Mensaje> obtenerMensaje(
             @PathVariable @Parameter(description = "ID del mensaje") Long id) {
         try {
